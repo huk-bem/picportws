@@ -1,0 +1,1402 @@
+<meta charset="utf-8" />
+<title>Rahmwerk</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,440..700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --ink:#211d17;
+    --paper:#f6f2e8;
+    --paper-2:#efe8d8;
+    --paper-3:#e4dcc6;
+    --line:#ddd2b4;
+    --slate:#6b6153;
+    --brass:#a1742f;
+    --brass-2:#c99a52;
+    --brass-ink:#4a3712;
+    --good:#4f7a5a;
+    --bad:#a24a3f;
+    --stage:#e7e0cd;
+    --shadow-1:0 1px 2px rgba(33,29,23,.08);
+    --shadow-2:0 12px 30px rgba(33,29,23,.16);
+    --radius:10px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#f1ead9;
+      --paper:#171310;
+      --paper-2:#211b15;
+      --paper-3:#2b2318;
+      --line:#3b3020;
+      --slate:#b7ab90;
+      --brass:#dba955;
+      --brass-2:#eec783;
+      --brass-ink:#2c2110;
+      --good:#8ec39a;
+      --bad:#e2988a;
+      --stage:#0f0d0a;
+      --shadow-1:0 1px 2px rgba(0,0,0,.4);
+      --shadow-2:0 16px 40px rgba(0,0,0,.55);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#f1ead9;
+    --paper:#171310;
+    --paper-2:#211b15;
+    --paper-3:#2b2318;
+    --line:#3b3020;
+    --slate:#b7ab90;
+    --brass:#dba955;
+    --brass-2:#eec783;
+    --brass-ink:#2c2110;
+    --good:#8ec39a;
+    --bad:#e2988a;
+    --stage:#0f0d0a;
+    --shadow-1:0 1px 2px rgba(0,0,0,.4);
+    --shadow-2:0 16px 40px rgba(0,0,0,.55);
+  }
+
+  *,*::before,*::after{ box-sizing:border-box; }
+  html{ color-scheme: light dark; }
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size:14.5px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:.001ms !important; transition-duration:.001ms !important; }
+  }
+  h1,h2,h3{ font-family:"Fraunces", Georgia, serif; text-wrap:balance; margin:0; }
+  button{ font-family:inherit; }
+  input,select,textarea{ font-family:inherit; color:inherit; }
+  a{ color:var(--brass-ink); }
+
+  .app{ height:100vh; display:flex; flex-direction:column; }
+
+  .topbar{
+    display:flex; align-items:baseline; justify-content:space-between; gap:16px;
+    padding:18px 28px; border-bottom:1px solid var(--line);
+    background:var(--paper); position:sticky; top:0; z-index:20;
+  }
+  .brand{ display:flex; align-items:baseline; gap:12px; }
+  .brand h1{ font-size:1.5rem; font-weight:600; letter-spacing:.01em; }
+  .brand .mark{ color:var(--brass); }
+  .brand .tag{ color:var(--slate); font-size:.82rem; }
+  .topbar-right{ display:flex; align-items:center; gap:10px; }
+
+  .layout{
+    flex:1; display:grid; grid-template-columns:368px 1fr; min-height:0;
+  }
+  @media (max-width: 880px){
+    .layout{ grid-template-columns:1fr; height:auto; overflow-y:auto; }
+    .app{ height:auto; min-height:100vh; }
+  }
+
+  .rail{
+    border-right:1px solid var(--line);
+    overflow-y:auto; padding:14px 14px 60px; min-height:0;
+    background:var(--paper);
+    display:flex; flex-direction:column; gap:10px;
+  }
+
+  details.panel{
+    background:var(--paper-2); border:1px solid var(--line); border-radius:var(--radius);
+    overflow:hidden;
+  }
+  details.panel + details.panel{ margin-top:0; }
+  details.panel > summary{
+    list-style:none; cursor:pointer; padding:13px 14px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    font-family:"Fraunces", serif; font-weight:600; font-size:1.02rem;
+  }
+  details.panel > summary::-webkit-details-marker{ display:none; }
+  details.panel > summary .num{
+    font-family:"IBM Plex Mono", monospace; font-size:.72rem; color:var(--brass-ink);
+    background:color-mix(in srgb, var(--brass) 22%, transparent);
+    border-radius:999px; width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center;
+    margin-right:9px; flex:none;
+  }
+  details.panel > summary .chev{ color:var(--slate); transition:transform .15s ease; flex:none; }
+  details.panel[open] > summary .chev{ transform:rotate(90deg); }
+  details.panel .panel-body{ padding:4px 14px 16px; display:flex; flex-direction:column; gap:14px; }
+  .panel-toggle{ display:flex; align-items:center; gap:8px; font-size:.78rem; color:var(--slate); }
+
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  .field-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  label.label{ font-size:.76rem; text-transform:uppercase; letter-spacing:.06em; color:var(--slate); }
+  .val{ font-family:"IBM Plex Mono", monospace; font-size:.78rem; color:var(--ink); font-variant-numeric:tabular-nums; }
+
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:26px; background:transparent; cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-runnable-track{ height:4px; background:var(--line); border-radius:999px; }
+  input[type=range]::-moz-range-track{ height:4px; background:var(--line); border-radius:999px; }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; margin-top:-7px; width:18px; height:18px; border-radius:50%;
+    background:var(--brass); border:2px solid var(--paper); box-shadow:0 0 0 1px var(--brass);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:16px; height:16px; border-radius:50%; background:var(--brass); border:2px solid var(--paper); box-shadow:0 0 0 1px var(--brass);
+  }
+  input[type=range]:focus-visible::-webkit-slider-thumb{ outline:2px solid var(--brass-2); outline-offset:2px; }
+
+  select, input[type=text], input[type=number]{
+    background:var(--paper); color:var(--ink); border:1px solid var(--line); border-radius:7px;
+    padding:8px 10px; font-size:.86rem; width:100%;
+  }
+  select:focus-visible, input:focus-visible, button:focus-visible, [tabindex]:focus-visible{
+    outline:2px solid var(--brass); outline-offset:1px;
+  }
+  input[type=color]{
+    -webkit-appearance:none; appearance:none; width:38px; height:32px; border:1px solid var(--line);
+    border-radius:7px; background:none; padding:2px; cursor:pointer;
+  }
+  input[type=color]::-webkit-color-swatch{ border:none; border-radius:5px; }
+  input[type=color]::-moz-color-swatch{ border:none; border-radius:5px; }
+  input[disabled], select[disabled]{ opacity:.45; cursor:not-allowed; }
+
+  .switch{ position:relative; width:36px; height:21px; flex:none; }
+  .switch input{ position:absolute; inset:0; opacity:0; cursor:pointer; margin:0; }
+  .switch .track{
+    position:absolute; inset:0; background:var(--line); border-radius:999px; transition:background .15s;
+  }
+  .switch .knob{
+    position:absolute; top:2px; left:2px; width:17px; height:17px; border-radius:50%; background:var(--paper);
+    box-shadow:var(--shadow-1); transition:transform .15s;
+  }
+  .switch input:checked + .track{ background:var(--brass); }
+  .switch input:checked + .track + .knob{ transform:translateX(15px); }
+  .switch input:focus-visible + .track{ outline:2px solid var(--brass-2); outline-offset:2px; }
+
+  .swatchgrid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; }
+  .swatch{
+    border:2px solid transparent; border-radius:8px; padding:0; cursor:pointer; overflow:hidden;
+    background:var(--paper); display:flex; flex-direction:column; align-items:stretch;
+  }
+  .swatch canvas{ display:block; width:100%; height:44px; }
+  .swatch span{ font-size:.66rem; color:var(--slate); padding:4px 3px; text-align:center; line-height:1.15; }
+  .swatch[aria-pressed="true"]{ border-color:var(--brass); }
+  .swatch[aria-pressed="true"] span{ color:var(--brass-ink); font-weight:600; }
+
+  .roomgrid{ display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; }
+  .roomcard{
+    border:2px solid transparent; border-radius:8px; overflow:hidden; cursor:pointer; background:var(--paper); padding:0;
+  }
+  .roomcard canvas{ display:block; width:100%; height:60px; }
+  .roomcard span{ display:block; font-size:.7rem; color:var(--slate); padding:5px 6px; text-align:left; }
+  .roomcard[aria-pressed="true"]{ border-color:var(--brass); }
+  .roomcard[aria-pressed="true"] span{ color:var(--brass-ink); font-weight:600; }
+
+  .colorset{ display:flex; gap:8px; }
+  .colorset button{
+    width:26px; height:26px; border-radius:50%; border:2px solid var(--line); cursor:pointer; padding:0;
+  }
+  .colorset button[aria-pressed="true"]{ border-color:var(--brass); box-shadow:0 0 0 2px color-mix(in srgb, var(--brass) 35%, transparent); }
+
+  .segmented{ display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .segmented button{
+    flex:1; background:var(--paper); border:none; color:var(--slate); padding:8px 6px; font-size:.8rem; cursor:pointer;
+    border-right:1px solid var(--line);
+  }
+  .segmented button:last-child{ border-right:none; }
+  .segmented button[aria-pressed="true"]{ background:var(--brass); color:var(--brass-ink); font-weight:600; }
+
+  .anchorgrid{ display:inline-grid; grid-template-columns:repeat(3, 26px); grid-template-rows:repeat(3, 26px); gap:5px; }
+  .anchorgrid button{
+    width:26px; height:26px; border-radius:5px; border:1px solid var(--line); background:var(--paper); cursor:pointer; padding:0; position:relative;
+  }
+  .anchorgrid button::after{
+    content:""; position:absolute; inset:0; margin:auto; width:5px; height:5px; border-radius:50%; background:var(--slate);
+  }
+  .anchorgrid button[aria-pressed="true"]{ background:var(--brass); border-color:var(--brass); }
+  .anchorgrid button[aria-pressed="true"]::after{ background:var(--brass-ink); }
+
+  .dropzone{
+    border:1.5px dashed var(--line); border-radius:9px; padding:16px 12px; text-align:center; cursor:pointer;
+    color:var(--slate); font-size:.82rem; background:var(--paper);
+  }
+  .dropzone.drag{ border-color:var(--brass); color:var(--brass-ink); background:color-mix(in srgb, var(--brass) 8%, var(--paper)); }
+  .dropzone strong{ color:var(--ink); }
+  .photometa{ display:flex; align-items:center; gap:10px; }
+  .photometa img{ width:44px; height:44px; object-fit:cover; border-radius:6px; border:1px solid var(--line); }
+  .photometa .meta{ font-size:.76rem; color:var(--slate); }
+  .photometa .meta b{ color:var(--ink); font-weight:600; display:block; font-size:.82rem; }
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px; border-radius:8px; border:1px solid var(--line);
+    background:var(--paper); color:var(--ink); padding:9px 14px; font-size:.85rem; cursor:pointer; font-weight:500;
+  }
+  .btn:hover{ border-color:var(--brass); }
+  .btn-primary{ background:var(--brass); border-color:var(--brass); color:var(--brass-ink); font-weight:600; }
+  .btn-primary:hover{ background:var(--brass-2); border-color:var(--brass-2); }
+  .btn-block{ width:100%; }
+  .btn[disabled]{ opacity:.5; cursor:not-allowed; }
+  .btn-ghost{ background:transparent; }
+
+  .hint{ font-size:.76rem; color:var(--slate); }
+  .status{ font-size:.78rem; min-height:1.1em; }
+  .status[data-state="ok"]{ color:var(--good); }
+  .status[data-state="err"]{ color:var(--bad); }
+
+  .main{ display:flex; flex-direction:column; min-width:0; min-height:0; }
+  .stagebar{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 22px;
+    border-bottom:1px solid var(--line); flex-wrap:wrap;
+  }
+  .stagebar .readout{ font-family:"IBM Plex Mono", monospace; font-size:.75rem; color:var(--slate); font-variant-numeric:tabular-nums; }
+
+  .stage-wrap{
+    flex:1; display:flex; align-items:center; justify-content:center; padding:36px;
+    background:
+      radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--brass) 6%, transparent), transparent 45%),
+      var(--stage);
+    min-height:420px;
+  }
+  #stageCanvas{ max-width:100%; max-height:66vh; width:auto; height:auto; border-radius:2px; touch-action:none; }
+  #stageCanvas.floating{ filter: drop-shadow(0 22px 34px rgba(10,8,4,.34)) drop-shadow(0 4px 8px rgba(10,8,4,.22)); }
+  #stageCanvas.draggable{ cursor:grab; }
+  #stageCanvas.dragging{ cursor:grabbing; }
+
+  footer{ padding:12px 22px; border-top:1px solid var(--line); font-size:.74rem; color:var(--slate); display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  footer a{ color:inherit; text-decoration:underline; text-decoration-color:var(--line); }
+
+  .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <h1><span class="mark">Rahm</span>werk</h1>
+      <span class="tag">Rahmen&nbsp;·&nbsp;Wandszenen&nbsp;·&nbsp;Wasserzeichen</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost" id="resetBtn" type="button">Zurücksetzen</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="rail" id="rail">
+
+      <!-- 1: Foto -->
+      <details class="panel" open>
+        <summary><span><span class="num">1</span>Foto</span><span class="chev">▸</span></summary>
+        <div class="panel-body">
+          <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Foto hochladen">
+            <div id="dropzoneEmpty"><strong>Foto hierher ziehen</strong><br>oder klicken zum Auswählen<br><span class="hint">JPG, PNG, WebP, GIF, SVG …</span></div>
+            <div id="dropzoneFilled" class="photometa" style="display:none">
+              <img id="photoThumb" alt="">
+              <div class="meta"><b id="photoName"></b><span id="photoDims"></span></div>
+            </div>
+          </div>
+          <input type="file" id="photoInput" accept="image/*" class="sr-only">
+
+          <div class="field">
+            <div class="field-row"><label class="label" for="openingSelect">Öffnungsformat</label></div>
+            <select id="openingSelect">
+              <option value="photo">Wie Foto (kein Zuschnitt)</option>
+              <option value="1:1">Quadratisch — 1:1</option>
+              <option value="4:5">Hochformat — 4:5</option>
+              <option value="5:4">Querformat — 5:4</option>
+              <option value="2:3">Hochformat — 2:3</option>
+              <option value="3:2">Querformat — 3:2</option>
+              <option value="9:16">Breitformat hoch — 9:16</option>
+              <option value="16:9">Breitformat — 16:9</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="field-row"><label class="label" for="fitSelect">Einpassung</label></div>
+            <select id="fitSelect">
+              <option value="contain">Einpassen (ganzes Foto sichtbar)</option>
+              <option value="cover">Ausfüllen (Foto füllt Öffnung)</option>
+              <option value="stretch">Verzerren (auf Öffnung strecken)</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="field-row"><label class="label" for="zoomRange">Zoom</label><span class="val" id="zoomVal">100%</span></div>
+            <input type="range" id="zoomRange" min="50" max="220" value="100" step="1">
+          </div>
+          <div class="field">
+            <div class="field-row"><label class="label" for="panXRange">Position horizontal</label><span class="val" id="panXVal">0</span></div>
+            <input type="range" id="panXRange" min="-100" max="100" value="0" step="1">
+          </div>
+          <div class="field">
+            <div class="field-row"><label class="label" for="panYRange">Position vertikal</label><span class="val" id="panYVal">0</span></div>
+            <input type="range" id="panYRange" min="-100" max="100" value="0" step="1">
+          </div>
+          <p class="hint">Tipp: Foto lässt sich auch direkt in der Vorschau per Ziehen verschieben.</p>
+        </div>
+      </details>
+
+      <!-- 2: Rahmen -->
+      <details class="panel" open>
+        <summary><span><span class="num">2</span>Rahmen</span><span class="chev">▸</span></summary>
+        <div class="panel-body">
+          <div class="field-row panel-toggle">
+            <span>Rahmen anzeigen</span>
+            <label class="switch"><input type="checkbox" id="frameOn" checked><span class="track"></span><span class="knob"></span></label>
+          </div>
+
+          <div class="field">
+            <label class="label">Material</label>
+            <div class="swatchgrid" id="materialGrid"></div>
+          </div>
+
+          <div class="field">
+            <div class="field-row">
+              <label class="label" for="frameColor">Farbe (Matt / Hochglanz)</label>
+              <input type="color" id="frameColor" value="#e8dcc0">
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-row"><label class="label" for="frameWidth">Rahmenbreite</label><span class="val" id="frameWidthVal">46 px</span></div>
+            <input type="range" id="frameWidth" min="6" max="140" value="46" step="1">
+          </div>
+
+          <div class="field">
+            <div class="field-row"><label class="label" for="matWidth">Passepartout (Rand innen)</label><span class="val" id="matWidthVal">40 px</span></div>
+            <input type="range" id="matWidth" min="0" max="160" value="40" step="1">
+          </div>
+          <div class="field">
+            <label class="label">Passepartout-Farbe</label>
+            <div class="colorset" id="matColorSet">
+              <button type="button" style="background:#f6f3ea" data-c="#f6f3ea" aria-pressed="true" title="Cremeweiß"></button>
+              <button type="button" style="background:#ffffff" data-c="#ffffff" title="Weiß"></button>
+              <button type="button" style="background:#d8d2c2" data-c="#d8d2c2" title="Sand"></button>
+              <button type="button" style="background:#22201b" data-c="#22201b" title="Schwarz"></button>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-row"><label class="label" for="outerMargin">Außenabstand (Rand außen)</label><span class="val" id="outerMarginVal">30 px</span></div>
+            <input type="range" id="outerMargin" min="0" max="200" value="30" step="1">
+          </div>
+
+          <div class="field-row panel-toggle">
+            <span>Schlagschatten</span>
+            <label class="switch"><input type="checkbox" id="frameShadow" checked><span class="track"></span><span class="knob"></span></label>
+          </div>
+        </div>
+      </details>
+
+      <!-- 3: Wand -->
+      <details class="panel">
+        <summary><span><span class="num">3</span>Wand</span><span class="chev">▸</span></summary>
+        <div class="panel-body">
+          <div class="field-row panel-toggle">
+            <span>Auf Raumfoto platzieren</span>
+            <label class="switch"><input type="checkbox" id="wallOn"><span class="track"></span><span class="knob"></span></label>
+          </div>
+
+          <div class="field">
+            <label class="label">Raum</label>
+            <div class="roomgrid" id="roomGrid"></div>
+          </div>
+
+          <div class="field" id="customRoomField" style="display:none">
+            <div class="dropzone" id="roomDropzone" tabindex="0" role="button" aria-label="Eigenen Raum hochladen">
+              <span id="roomDropzoneText"><strong>Eigenes Raumfoto</strong><br>Büro, Lobby, Wohnzimmer … hochladen</span>
+            </div>
+            <input type="file" id="roomInput" accept="image/*" class="sr-only">
+          </div>
+
+          <div class="field">
+            <label class="label">Platzierung des Rahmens</label>
+            <div class="anchorgrid" id="wallAnchorGrid"></div>
+          </div>
+          <div class="field">
+            <div class="field-row"><label class="label" for="wallOffX">Feinjustierung horizontal</label><span class="val" id="wallOffXVal">0</span></div>
+            <input type="range" id="wallOffX" min="-100" max="100" value="0" step="1">
+          </div>
+          <div class="field">
+            <div class="field-row"><label class="label" for="wallOffY">Feinjustierung vertikal</label><span class="val" id="wallOffYVal">0</span></div>
+            <input type="range" id="wallOffY" min="-100" max="100" value="0" step="1">
+          </div>
+          <div class="field">
+            <div class="field-row"><label class="label" for="wallScale">Größe an der Wand</label><span class="val" id="wallScaleVal">46%</span></div>
+            <input type="range" id="wallScale" min="14" max="86" value="46" step="1">
+          </div>
+        </div>
+      </details>
+
+      <!-- 4: Wasserzeichen -->
+      <details class="panel">
+        <summary><span><span class="num">4</span>Wasserzeichen</span><span class="chev">▸</span></summary>
+        <div class="panel-body">
+          <div class="field-row panel-toggle">
+            <span>Wasserzeichen aktivieren</span>
+            <label class="switch"><input type="checkbox" id="wmOn"><span class="track"></span><span class="knob"></span></label>
+          </div>
+
+          <div class="field">
+            <label class="label">Typ</label>
+            <div class="segmented" id="wmKind">
+              <button type="button" data-v="text" aria-pressed="true">Text</button>
+              <button type="button" data-v="image" aria-pressed="false">Bilddatei</button>
+            </div>
+          </div>
+
+          <div id="wmTextFields">
+            <div class="field">
+              <label class="label" for="wmText">Text</label>
+              <input type="text" id="wmText" value="© Ihr Studio" maxlength="80">
+            </div>
+            <div class="field">
+              <div class="field-row"><label class="label" for="wmFontSize">Schriftgröße</label><span class="val" id="wmFontSizeVal">64 px</span></div>
+              <input type="range" id="wmFontSize" min="14" max="180" value="64" step="1">
+            </div>
+            <div class="field">
+              <div class="field-row"><label class="label" for="wmColor">Textfarbe</label><input type="color" id="wmColor" value="#ffffff"></div>
+            </div>
+          </div>
+
+          <div id="wmImageFields" style="display:none">
+            <div class="field">
+              <div class="dropzone" id="wmDropzone" tabindex="0" role="button" aria-label="Wasserzeichen-Bild hochladen">
+                <span id="wmDropzoneText"><strong>Logo / Bilddatei</strong><br>als Wasserzeichen hochladen</span>
+              </div>
+              <input type="file" id="wmInput" accept="image/*" class="sr-only">
+            </div>
+            <div class="field">
+              <div class="field-row"><label class="label" for="wmScale">Größe</label><span class="val" id="wmScaleVal">40%</span></div>
+              <input type="range" id="wmScale" min="6" max="120" value="40" step="1">
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-row"><label class="label" for="wmRotation">Drehung</label><span class="val" id="wmRotationVal">−28°</span></div>
+            <input type="range" id="wmRotation" min="-90" max="90" value="-28" step="1">
+          </div>
+
+          <div class="field-row panel-toggle">
+            <span>Als Kachelmuster wiederholen</span>
+            <label class="switch"><input type="checkbox" id="wmTile" checked><span class="track"></span><span class="knob"></span></label>
+          </div>
+
+          <div class="field" id="wmAnchorField" style="display:none">
+            <label class="label">Position</label>
+            <div class="anchorgrid" id="wmAnchorGrid"></div>
+          </div>
+
+          <div class="field">
+            <label class="label" for="wmPlacement">Ebene</label>
+            <select id="wmPlacement">
+              <option value="behind">Hinter dem Foto</option>
+              <option value="front">Vor dem Foto</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <div class="field-row"><label class="label" for="wmOpacity">Deckkraft</label><span class="val" id="wmOpacityVal">28%</span></div>
+            <input type="range" id="wmOpacity" min="2" max="100" value="28" step="1">
+          </div>
+
+          <div class="field" id="wmBleedField">
+            <div class="field-row"><label class="label" for="wmBleed">Sichtbarkeit durchs Foto</label><span class="val" id="wmBleedVal">0%</span></div>
+            <input type="range" id="wmBleed" min="0" max="100" value="0" step="1">
+            <p class="hint">Nur bei „Hinter dem Foto“: macht das Foto teil­transparent, damit das Wasserzeichen durchscheint.</p>
+          </div>
+        </div>
+      </details>
+
+      <!-- 5: Export -->
+      <details class="panel">
+        <summary><span><span class="num">5</span>Export</span><span class="chev">▸</span></summary>
+        <div class="panel-body">
+          <div class="field">
+            <label class="label" for="exportFormat">Dateiformat</label>
+            <select id="exportFormat">
+              <option value="png">PNG (verlustfrei)</option>
+              <option value="jpeg">JPEG (kleiner)</option>
+            </select>
+          </div>
+          <div class="field" id="jpegQualityField" style="display:none">
+            <div class="field-row"><label class="label" for="jpegQuality">JPEG-Qualität</label><span class="val" id="jpegQualityVal">92%</span></div>
+            <input type="range" id="jpegQuality" min="40" max="100" value="92" step="1">
+          </div>
+          <div class="field">
+            <label class="label" for="exportName">Dateiname</label>
+            <input type="text" id="exportName" value="rahmwerk-export">
+          </div>
+          <button class="btn btn-primary btn-block" id="exportBtn" type="button">Bild speichern</button>
+          <p class="status" id="exportStatus" role="status" aria-live="polite"></p>
+          <p class="hint">Läuft der Speichern-Dialog nicht an: Rechtsklick auf die Vorschau → „Grafik speichern unter …“.</p>
+        </div>
+      </details>
+
+    </aside>
+
+    <section class="main">
+      <div class="stagebar">
+        <span class="hint">Vorschau</span>
+        <span class="readout" id="readout">–</span>
+      </div>
+      <div class="stage-wrap">
+        <canvas id="stageCanvas" width="900" height="700"></canvas>
+      </div>
+      <footer>
+        <span>Alles läuft lokal im Browser – Fotos verlassen dieses Gerät nicht.</span>
+        <span>Rahmwerk</span>
+      </footer>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------------------------------------------------------- *
+   *  State
+   * ---------------------------------------------------------------- */
+  const state = {
+    photo: null,       // {img, w, h}
+    opening: "photo",  // "photo" or "W:H" aspect ratio for the mat/frame opening
+    fit: "contain",
+    zoom: 1,
+    panX: 0, panY: 0,  // -1..1
+    frame: {
+      on: true, material: "oak", color: "#e8dcc0",
+      width: 46, mat: 40, matColor: "#f6f3ea", outer: 30, shadow: true
+    },
+    wall: {
+      on: false, preset: "living", customImg: null,
+      scale: 46, anchorX: 0.5, anchorY: 0.62, offX: 0, offY: 0
+    },
+    watermark: {
+      on: false, kind: "text", text: "© Ihr Studio", fontSize: 64, color: "#ffffff",
+      image: null, scale: 40, rotation: -28, tile: true,
+      placement: "behind", opacity: 28, bleed: 0, anchorX: 0.5, anchorY: 0.5
+    }
+  };
+
+  const $ = (id) => document.getElementById(id);
+
+  /* ---------------------------------------------------------------- *
+   *  Seeded random (stable textures across re-renders)
+   * ---------------------------------------------------------------- */
+  function mulberry32(seed){
+    return function(){
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  /* ---------------------------------------------------------------- *
+   *  Frame materials
+   * ---------------------------------------------------------------- */
+  function paintWood(ctx,x,y,w,h,c0,c1,grainRGB,seed){
+    const g = ctx.createLinearGradient(x,y,x+w,y+h);
+    g.addColorStop(0,c0); g.addColorStop(.5,c1); g.addColorStop(1,c0);
+    ctx.fillStyle = g; ctx.fillRect(x,y,w,h);
+    const rnd = mulberry32(seed);
+    const n = Math.max(18, Math.round(h/5));
+    for(let i=0;i<n;i++){
+      const ly = y + rnd()*h;
+      ctx.strokeStyle = "rgba(" + grainRGB + "," + (0.05+rnd()*0.16).toFixed(3) + ")";
+      ctx.lineWidth = 0.6 + rnd()*1.7;
+      ctx.beginPath();
+      ctx.moveTo(x, ly);
+      const step = Math.max(18, w/26);
+      for(let px=x; px<=x+w; px+=step){
+        ctx.lineTo(px, ly + Math.sin((px+ly)*0.045)*3.2*rnd()+ (rnd()-0.5)*2);
+      }
+      ctx.stroke();
+    }
+  }
+  function paintMetal(ctx,x,y,w,h,c0,c1,seed,warm){
+    const g = ctx.createLinearGradient(x,y,x+w,y+h);
+    g.addColorStop(0,c0); g.addColorStop(.45,c1); g.addColorStop(.55,c1); g.addColorStop(1,c0);
+    ctx.fillStyle = g; ctx.fillRect(x,y,w,h);
+    const rnd = mulberry32(seed);
+    const n = Math.max(24, Math.round(h/3));
+    for(let i=0;i<n;i++){
+      const ly = y + rnd()*h;
+      const light = rnd() > 0.5;
+      ctx.strokeStyle = light ? "rgba(255,255,255,"+(0.04+rnd()*0.10).toFixed(3)+")" : "rgba(20,16,10,"+(0.04+rnd()*0.10).toFixed(3)+")";
+      ctx.lineWidth = 0.5 + rnd();
+      ctx.beginPath(); ctx.moveTo(x, ly); ctx.lineTo(x+w, ly + (rnd()-0.5)*4); ctx.stroke();
+    }
+    const sheen = ctx.createLinearGradient(x,y,x+w*0.5,y+h);
+    const sc = warm ? "255,244,214" : "255,255,255";
+    sheen.addColorStop(0,"rgba("+sc+",0)");
+    sheen.addColorStop(0.5,"rgba("+sc+",0.22)");
+    sheen.addColorStop(1,"rgba("+sc+",0)");
+    ctx.fillStyle = sheen; ctx.fillRect(x,y,w,h);
+  }
+  function paintFlat(ctx,x,y,w,h,color,gloss){
+    ctx.fillStyle = color; ctx.fillRect(x,y,w,h);
+    const vg = ctx.createRadialGradient(x+w/2,y+h/2, Math.max(w,h)*0.1, x+w/2,y+h/2, Math.max(w,h)*0.75);
+    vg.addColorStop(0,"rgba(0,0,0,0)"); vg.addColorStop(1,"rgba(0,0,0,0.14)");
+    ctx.fillStyle = vg; ctx.fillRect(x,y,w,h);
+    if(gloss){
+      const sh = ctx.createLinearGradient(x,y,x+w*0.6,y+h*0.9);
+      sh.addColorStop(0,"rgba(255,255,255,0)");
+      sh.addColorStop(0.45,"rgba(255,255,255,0.30)");
+      sh.addColorStop(0.55,"rgba(255,255,255,0.05)");
+      sh.addColorStop(1,"rgba(255,255,255,0)");
+      ctx.fillStyle = sh; ctx.fillRect(x,y,w,h);
+    }
+  }
+
+  const MATERIALS = {
+    oak:    { label:"Eiche",            paint:(c,x,y,w,h,col)=>paintWood(c,x,y,w,h,"#d9b98a","#b78f5c","96,63,28",11), colorable:false },
+    walnut: { label:"Nussbaum",         paint:(c,x,y,w,h,col)=>paintWood(c,x,y,w,h,"#8a6142","#5c3d27","41,23,11",23), colorable:false },
+    silver: { label:"Metall gebürstet", paint:(c,x,y,w,h,col)=>paintMetal(c,x,y,w,h,"#e7eaec","#b7bcc0",5,false), colorable:false },
+    black:  { label:"Metall schwarz",   paint:(c,x,y,w,h,col)=>paintMetal(c,x,y,w,h,"#3c3f42","#131416",9,false), colorable:false },
+    brass:  { label:"Messing",          paint:(c,x,y,w,h,col)=>paintMetal(c,x,y,w,h,"#e8c375","#a9793a",13,true), colorable:false },
+    matte:  { label:"Matt",             paint:(c,x,y,w,h,col)=>paintFlat(c,x,y,w,h,col,false), colorable:true },
+    gloss:  { label:"Hochglanz",        paint:(c,x,y,w,h,col)=>paintFlat(c,x,y,w,h,col,true), colorable:true }
+  };
+
+  /* ---------------------------------------------------------------- *
+   *  Room presets (procedural illustrations)
+   * ---------------------------------------------------------------- */
+  function drawOffice(ctx,w,h){
+    const wall = ctx.createLinearGradient(0,0,0,h*0.72);
+    wall.addColorStop(0,"#dfe2df"); wall.addColorStop(1,"#c9cdc8");
+    ctx.fillStyle = wall; ctx.fillRect(0,0,w,h*0.72);
+    ctx.fillStyle = "rgba(0,0,0,0.05)"; ctx.fillRect(0,h*0.70,w,h*0.02);
+    const floor = ctx.createLinearGradient(0,h*0.72,0,h);
+    floor.addColorStop(0,"#8d8578"); floor.addColorStop(1,"#6f695e");
+    ctx.fillStyle = floor; ctx.fillRect(0,h*0.72,w,h*0.28);
+    ctx.strokeStyle = "rgba(0,0,0,0.06)"; ctx.lineWidth=1;
+    for(let i=0;i<10;i++){ const yy=h*0.72+i*(h*0.28/10); ctx.beginPath(); ctx.moveTo(0,yy); ctx.lineTo(w,yy+6); ctx.stroke(); }
+    ctx.fillStyle = "#aab0ad"; ctx.fillRect(w*0.7,h*0.10,w*0.22,h*0.34);
+    ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.lineWidth=3;
+    for(let i=1;i<6;i++){ const yy=h*0.10+i*(h*0.34/6); ctx.beginPath(); ctx.moveTo(w*0.7,yy); ctx.lineTo(w*0.92,yy); ctx.stroke(); }
+    ctx.fillStyle = "#5b554b"; ctx.fillRect(w*0.05,h*0.60,w*0.24,h*0.06);
+    ctx.fillRect(w*0.07,h*0.66,w*0.02,h*0.14); ctx.fillRect(w*0.27,h*0.66,w*0.02,h*0.14);
+    ctx.fillStyle = "#43403a"; ctx.beginPath(); ctx.ellipse(w*0.16,h*0.55,w*0.02,h*0.05,0,0,Math.PI*2); ctx.fill();
+  }
+  function drawLobby(ctx,w,h){
+    const wall = ctx.createLinearGradient(0,0,0,h*0.7);
+    wall.addColorStop(0,"#cdbfa9"); wall.addColorStop(1,"#b7a689");
+    ctx.fillStyle = wall; ctx.fillRect(0,0,w,h*0.7);
+    const floor = ctx.createLinearGradient(0,h*0.7,0,h);
+    floor.addColorStop(0,"#e7e2d6"); floor.addColorStop(1,"#cfc8b6");
+    ctx.fillStyle = floor; ctx.fillRect(0,h*0.7,w,h*0.3);
+    ctx.strokeStyle = "rgba(120,100,70,0.15)"; ctx.lineWidth=1.2;
+    const rnd = mulberry32(31);
+    for(let i=0;i<26;i++){ ctx.beginPath(); const sx=rnd()*w, sy=h*0.7+rnd()*h*0.3; ctx.moveTo(sx,sy); ctx.lineTo(sx+rnd()*80-40, sy+rnd()*10-5); ctx.stroke(); }
+    ctx.fillStyle = "#8a7350"; ctx.fillRect(w*0.36,h*0.55,w*0.28,h*0.09);
+    ctx.fillStyle="#6d5a3c"; ctx.fillRect(w*0.38,h*0.64,w*0.24,h*0.03);
+    [0.18,0.82].forEach(px=>{
+      ctx.strokeStyle="#4d4030"; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(w*px,h*0.30); ctx.lineTo(w*px,h*0.58); ctx.stroke();
+      ctx.fillStyle="#5f7a5c"; ctx.beginPath();
+      ctx.ellipse(w*px,h*0.26,w*0.05,h*0.09,0,0,Math.PI*2); ctx.fill();
+    });
+    ctx.fillStyle="rgba(255,244,214,0.5)";
+    ctx.beginPath(); ctx.ellipse(w*0.5,h*0.06,w*0.05,h*0.02,0,0,Math.PI*2); ctx.fill();
+  }
+  function drawLiving(ctx,w,h){
+    const wall = ctx.createLinearGradient(0,0,0,h*0.66);
+    wall.addColorStop(0,"#e7e0cf"); wall.addColorStop(1,"#d7cdb4");
+    ctx.fillStyle = wall; ctx.fillRect(0,0,w,h*0.66);
+    const floor = ctx.createLinearGradient(0,h*0.66,0,h);
+    floor.addColorStop(0,"#a9784e"); floor.addColorStop(1,"#7c5535");
+    ctx.fillStyle = floor; ctx.fillRect(0,h*0.66,w,h*0.34);
+    ctx.strokeStyle = "rgba(0,0,0,0.10)"; ctx.lineWidth=1.5;
+    for(let x=0;x<w;x+=w/14){ ctx.beginPath(); ctx.moveTo(x,h*0.66); ctx.lineTo(x,h); ctx.stroke(); }
+    ctx.fillStyle="rgba(230,220,200,0.35)";
+    ctx.beginPath(); ctx.ellipse(w*0.5,h*0.9,w*0.34,h*0.07,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#5b6a5f";
+    roundRect(ctx,w*0.14,h*0.62,w*0.5,h*0.16,10); ctx.fill();
+    roundRect(ctx,w*0.10,h*0.60,w*0.09,h*0.20,8); ctx.fill();
+    roundRect(ctx,w*0.60,h*0.60,w*0.09,h*0.20,8); ctx.fill();
+    for(let i=0;i<3;i++){ ctx.fillStyle="#41493f"; roundRect(ctx,w*(0.18+i*0.15),h*0.60,w*0.11,h*0.05,6); ctx.fill(); }
+    ctx.strokeStyle="#3a352a"; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(w*0.86,h*0.66); ctx.lineTo(w*0.86,h*0.30); ctx.stroke();
+    ctx.fillStyle="rgba(255,240,205,0.8)";
+    ctx.beginPath(); ctx.ellipse(w*0.86,h*0.27,w*0.045,h*0.05,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = "rgba(120,100,60,0.35)";
+    roundRect(ctx,w*0.06,h*0.10,w*0.14,h*0.28,3); ctx.fill();
+  }
+  function roundRect(ctx,x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  }
+  function coverDraw(ctx,img,x,y,w,h){
+    const ir = img.width/img.height, r = w/h;
+    let sw,sh,sx,sy;
+    if(ir>r){ sh=img.height; sw=sh*r; sx=(img.width-sw)/2; sy=0; }
+    else { sw=img.width; sh=sw/r; sx=0; sy=(img.height-sh)/2; }
+    ctx.drawImage(img, sx,sy,sw,sh, x,y,w,h);
+  }
+  const ROOM_PRESETS = {
+    living:  { label:"Wohnzimmer", draw:drawLiving },
+    office:  { label:"Büro",       draw:drawOffice },
+    lobby:   { label:"Lobby",      draw:drawLobby },
+    custom:  { label:"Eigenes Foto", draw:null }
+  };
+  function drawRoomBackground(ctx,w,h){
+    if(state.wall.preset === "custom" && state.wall.customImg){
+      coverDraw(ctx, state.wall.customImg, 0,0,w,h);
+      return;
+    }
+    const preset = ROOM_PRESETS[state.wall.preset] && ROOM_PRESETS[state.wall.preset].draw ? state.wall.preset : "living";
+    ROOM_PRESETS[preset].draw(ctx,w,h);
+  }
+
+  /* ---------------------------------------------------------------- *
+   *  Frame ring rendering
+   * ---------------------------------------------------------------- */
+  function ringPath(ox,oy,ow,oh, ix,iy,iw,ih){
+    const p = new Path2D();
+    p.rect(ox,oy,ow,oh);
+    p.rect(ix,iy,iw,ih);
+    return p;
+  }
+  function drawFrameRing(ctx, outer, inner, material, color){
+    const path = ringPath(outer.x,outer.y,outer.w,outer.h, inner.x,inner.y,inner.w,inner.h);
+    ctx.save();
+    ctx.clip(path, "evenodd");
+    MATERIALS[material].paint(ctx, outer.x, outer.y, outer.w, outer.h, color);
+
+    ctx.strokeStyle = "rgba(15,12,7,0.35)";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(outer.x, outer.y); ctx.lineTo(inner.x, inner.y);
+    ctx.moveTo(outer.x+outer.w, outer.y); ctx.lineTo(inner.x+inner.w, inner.y);
+    ctx.moveTo(outer.x, outer.y+outer.h); ctx.lineTo(inner.x, inner.y+inner.h);
+    ctx.moveTo(outer.x+outer.w, outer.y+outer.h); ctx.lineTo(inner.x+inner.w, inner.y+inner.h);
+    ctx.stroke();
+
+    ctx.strokeStyle = "rgba(255,255,255,0.30)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(outer.x+1, outer.y+1, outer.w-2, outer.h-2);
+
+    ctx.strokeStyle = "rgba(0,0,0,0.42)";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(inner.x, inner.y, inner.w, inner.h);
+    ctx.restore();
+  }
+
+  /* ---------------------------------------------------------------- *
+   *  Watermark rendering
+   * ---------------------------------------------------------------- */
+  function paintWatermark(ctx, rect){
+    const wm = state.watermark;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(rect.x, rect.y, rect.w, rect.h); ctx.clip();
+    ctx.globalAlpha = wm.opacity/100;
+
+    const drawOne = (c) => {
+      if(wm.kind === "text"){
+        const fs = Math.max(8, wm.fontSize * (rect.w/1000));
+        c.fillStyle = wm.color;
+        c.font = "600 " + fs.toFixed(1) + "px 'IBM Plex Sans', sans-serif";
+        c.textAlign = "center"; c.textBaseline = "middle";
+        c.fillText(wm.text || "", 0, 0);
+      } else if(wm.image){
+        const s = (wm.scale/100) * (rect.w*0.5);
+        const ar = wm.image.width/wm.image.height;
+        const iw = s, ih = s/ar;
+        c.drawImage(wm.image, -iw/2, -ih/2, iw, ih);
+      }
+    };
+
+    const angle = wm.rotation * Math.PI/180;
+    if(wm.tile){
+      const cx = rect.x+rect.w/2, cy = rect.y+rect.h/2;
+      const diag = Math.sqrt(rect.w*rect.w+rect.h*rect.h);
+      ctx.translate(cx,cy); ctx.rotate(angle);
+      let stepX = 220, stepY = 150;
+      if(wm.kind === "text"){
+        const fs = Math.max(8, wm.fontSize * (rect.w/1000));
+        stepX = Math.max(60, fs*3.4); stepY = Math.max(50, fs*2.1);
+      } else if(wm.image){
+        const s = (wm.scale/100) * (rect.w*0.5);
+        stepX = Math.max(40, s*1.7); stepY = Math.max(40, s*1.7 / (wm.image.width/wm.image.height));
+      }
+      for(let y=-diag; y<diag; y+=stepY){
+        for(let x=-diag; x<diag; x+=stepX){
+          ctx.save(); ctx.translate(x,y); drawOne(ctx); ctx.restore();
+        }
+      }
+    } else {
+      const px = rect.x + wm.anchorX*rect.w;
+      const py = rect.y + wm.anchorY*rect.h;
+      ctx.translate(px,py); ctx.rotate(angle);
+      drawOne(ctx);
+    }
+    ctx.restore();
+  }
+
+  /* ---------------------------------------------------------------- *
+   *  Photo placement
+   * ---------------------------------------------------------------- */
+  function drawPlaceholder(ctx, rect){
+    ctx.save();
+    ctx.beginPath(); ctx.rect(rect.x,rect.y,rect.w,rect.h); ctx.clip();
+    const g = ctx.createLinearGradient(rect.x,rect.y,rect.x+rect.w,rect.y+rect.h);
+    g.addColorStop(0,"#d3cdbc"); g.addColorStop(1,"#e9e4d5");
+    ctx.fillStyle = g; ctx.fillRect(rect.x,rect.y,rect.w,rect.h);
+    ctx.fillStyle = "rgba(40,34,22,0.5)";
+    const fs = Math.max(11, Math.round(rect.h*0.075));
+    ctx.font = fs + "px 'IBM Plex Sans', sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("Foto hochladen", rect.x+rect.w/2, rect.y+rect.h/2);
+    ctx.restore();
+  }
+  function drawPhoto(ctx, img, rect, fit, zoom, panX, panY, alpha){
+    ctx.save();
+    ctx.beginPath(); ctx.rect(rect.x,rect.y,rect.w,rect.h); ctx.clip();
+    ctx.globalAlpha = alpha;
+    const ir = img.width/img.height, rr = rect.w/rect.h;
+    let baseW, baseH;
+    if(fit === "stretch"){ baseW = rect.w; baseH = rect.h; }
+    else if(fit === "cover"){ if(ir>rr){ baseH=rect.h; baseW=baseH*ir; } else { baseW=rect.w; baseH=baseW/ir; } }
+    else { if(ir>rr){ baseW=rect.w; baseH=baseW/ir; } else { baseH=rect.h; baseW=baseH*ir; } }
+    const dw = baseW*zoom, dh = baseH*zoom;
+    const cx = rect.x+rect.w/2 + panX*(rect.w*0.5);
+    const cy = rect.y+rect.h/2 + panY*(rect.h*0.5);
+    ctx.drawImage(img, cx-dw/2, cy-dh/2, dw, dh);
+    ctx.restore();
+  }
+
+  /* ---------------------------------------------------------------- *
+   *  Compose the framed artwork
+   * ---------------------------------------------------------------- */
+  function openingAspect(){
+    if(state.opening === "photo"){
+      return state.photo ? state.photo.w/state.photo.h : 4/3;
+    }
+    const parts = state.opening.split(":");
+    const a = Number(parts[0]), b = Number(parts[1]);
+    return (a>0 && b>0) ? a/b : 4/3;
+  }
+  function buildArtCanvas(longEdge){
+    const f = state.frame;
+    const aspect = openingAspect();
+    const REF = 560;
+    let openW, openH;
+    if(aspect >= 1){ openW = REF; openH = REF/aspect; } else { openH = REF; openW = REF*aspect; }
+
+    const matT = f.on ? f.mat : 0;
+    const frameT = f.on ? f.width : 0;
+    const outerT = f.outer;
+
+    const innerRectR = { x: outerT+frameT+matT, y: outerT+frameT+matT, w: openW, h: openH };
+    const matOuterR   = { x: outerT+frameT, y: outerT+frameT, w: openW+2*matT, h: openH+2*matT };
+    const frameOuterR = { x: outerT, y: outerT, w: openW+2*matT+2*frameT, h: openH+2*matT+2*frameT };
+    const canvasW = openW+2*matT+2*frameT+2*outerT, canvasH = openH+2*matT+2*frameT+2*outerT;
+
+    const scale = longEdge / Math.max(canvasW, canvasH);
+    const R = (r) => ({ x:r.x*scale, y:r.y*scale, w:r.w*scale, h:r.h*scale });
+
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(canvasW*scale));
+    c.height = Math.max(1, Math.round(canvasH*scale));
+    const ctx = c.getContext("2d");
+    ctx.clearRect(0,0,c.width,c.height);
+
+    const inner = R(innerRectR), matOuter = R(matOuterR), frameOuter = R(frameOuterR);
+
+    if(f.on && frameT>0){
+      drawFrameRing(ctx, frameOuter, matOuter, f.material, f.color);
+    }
+    if(f.on && matT>0){
+      ctx.save();
+      const p = ringPath(matOuter.x,matOuter.y,matOuter.w,matOuter.h, inner.x,inner.y,inner.w,inner.h);
+      ctx.clip(p, "evenodd");
+      ctx.fillStyle = f.matColor; ctx.fillRect(matOuter.x,matOuter.y,matOuter.w,matOuter.h);
+      const vg = ctx.createRadialGradient(inner.x+inner.w/2,inner.y+inner.h/2, Math.min(inner.w,inner.h)*0.4, inner.x+inner.w/2,inner.y+inner.h/2, Math.max(matOuter.w,matOuter.h)*0.6);
+      vg.addColorStop(0,"rgba(0,0,0,0.10)"); vg.addColorStop(0.25,"rgba(0,0,0,0)");
+      ctx.fillStyle = vg; ctx.fillRect(matOuter.x,matOuter.y,matOuter.w,matOuter.h);
+      ctx.strokeStyle = "rgba(0,0,0,0.35)"; ctx.lineWidth = 2;
+      ctx.strokeRect(inner.x, inner.y, inner.w, inner.h);
+      ctx.restore();
+    }
+
+    const wm = state.watermark;
+    const behind = wm.on && wm.placement === "behind";
+    const front  = wm.on && wm.placement === "front";
+    const photoAlpha = behind ? Math.max(0, 1 - wm.bleed/100) : 1;
+
+    if(behind) paintWatermark(ctx, inner);
+    if(state.photo){
+      drawPhoto(ctx, state.photo.img, inner, state.fit, state.zoom, state.panX, state.panY, photoAlpha);
+    } else {
+      drawPlaceholder(ctx, inner);
+    }
+    if(front) paintWatermark(ctx, inner);
+
+    return { canvas:c, innerRect: inner };
+  }
+
+  function buildRoomCanvas(art){
+    const w = 1200, h = 800;
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const ctx = c.getContext("2d");
+    drawRoomBackground(ctx,w,h);
+
+    const artCanvas = art.canvas;
+    const wall = state.wall;
+    const targetW = w * (wall.scale/100);
+    const f = targetW / artCanvas.width;
+    const artW = artCanvas.width*f, artH = artCanvas.height*f;
+    const margin = 30;
+    let cx = margin + wall.anchorX*(w-2*margin);
+    let cy = margin + wall.anchorY*(h-2*margin);
+    cx += (wall.offX/100) * w * 0.28;
+    cy += (wall.offY/100) * h * 0.22;
+    let x = cx - artW/2, y = cy - artH/2;
+    x = Math.min(Math.max(x, -artW*0.15), w-artW*0.85);
+    y = Math.min(Math.max(y, -artH*0.15), h-artH*0.85);
+
+    ctx.save();
+    ctx.filter = "blur(16px)";
+    ctx.fillStyle = "rgba(8,6,3,0.4)";
+    ctx.beginPath();
+    ctx.ellipse(x+artW/2, y+artH+artH*0.05, artW*0.44, artH*0.07, 0,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.drawImage(artCanvas, x, y, artW, artH);
+    return c;
+  }
+
+  /* ---------------------------------------------------------------- *
+   *  Master render
+   * ---------------------------------------------------------------- */
+  const stageCanvas = $("stageCanvas");
+  let renderPending = false;
+  function scheduleRender(){
+    if(renderPending) return;
+    renderPending = true;
+    requestAnimationFrame(() => { renderPending = false; render(); });
+  }
+  function render(){
+    const artLong = state.wall.on ? 900 : 1150;
+    const art = buildArtCanvas(artLong);
+    let finalCanvas, isFloating;
+    if(state.wall.on){
+      finalCanvas = buildRoomCanvas(art);
+      isFloating = false;
+    } else {
+      finalCanvas = art.canvas;
+      isFloating = state.frame.shadow;
+    }
+    stageCanvas.width = finalCanvas.width;
+    stageCanvas.height = finalCanvas.height;
+    const dctx = stageCanvas.getContext("2d");
+    dctx.clearRect(0,0,stageCanvas.width, stageCanvas.height);
+    dctx.drawImage(finalCanvas,0,0);
+    stageCanvas.classList.toggle("floating", isFloating);
+    $("readout").textContent = finalCanvas.width + " × " + finalCanvas.height + " px";
+    saveSettings();
+  }
+
+  /* ---------------------------------------------------------------- *
+   *  UI: material & room swatches
+   * ---------------------------------------------------------------- */
+  function buildMaterialGrid(){
+    const grid = $("materialGrid");
+    grid.innerHTML = "";
+    Object.keys(MATERIALS).forEach(key => {
+      const m = MATERIALS[key];
+      const btn = document.createElement("button");
+      btn.type = "button"; btn.className = "swatch"; btn.dataset.m = key;
+      btn.setAttribute("aria-pressed", key === state.frame.material ? "true" : "false");
+      const cv = document.createElement("canvas");
+      cv.width = 120; cv.height = 80;
+      const c = cv.getContext("2d");
+      m.paint(c, 0,0,120,80, state.frame.color);
+      const label = document.createElement("span");
+      label.textContent = m.label;
+      btn.appendChild(cv); btn.appendChild(label);
+      btn.addEventListener("click", () => {
+        state.frame.material = key;
+        [...grid.children].forEach(b => b.setAttribute("aria-pressed", b === btn ? "true":"false"));
+        updateColorEnabled();
+        buildMaterialGrid();
+        scheduleRender();
+      });
+      grid.appendChild(btn);
+    });
+  }
+  function updateColorEnabled(){
+    $("frameColor").disabled = !MATERIALS[state.frame.material].colorable;
+  }
+
+  function buildRoomGrid(){
+    const grid = $("roomGrid");
+    grid.innerHTML = "";
+    Object.keys(ROOM_PRESETS).forEach(key => {
+      const preset = ROOM_PRESETS[key];
+      const btn = document.createElement("button");
+      btn.type = "button"; btn.className = "roomcard"; btn.dataset.r = key;
+      btn.setAttribute("aria-pressed", key === state.wall.preset ? "true" : "false");
+      const cv = document.createElement("canvas");
+      cv.width = 160; cv.height = 96;
+      const c = cv.getContext("2d");
+      if(preset.draw){ preset.draw(c,160,96); }
+      else {
+        c.fillStyle = "#cfc8b6"; c.fillRect(0,0,160,96);
+        c.fillStyle = "#8a8062"; c.font="12px 'IBM Plex Sans'"; c.textAlign="center"; c.textBaseline="middle";
+        c.fillText("eigenes Foto", 80,48);
+      }
+      const label = document.createElement("span");
+      label.textContent = preset.label;
+      btn.appendChild(cv); btn.appendChild(label);
+      btn.addEventListener("click", () => {
+        state.wall.preset = key;
+        [...grid.children].forEach(b => b.setAttribute("aria-pressed", b === btn ? "true":"false"));
+        $("customRoomField").style.display = key === "custom" ? "" : "none";
+        scheduleRender();
+      });
+      grid.appendChild(btn);
+    });
+  }
+
+  function buildAnchorGrid(container, get, set){
+    container.innerHTML = "";
+    const coords = [
+      [0.15,0.15],[0.5,0.15],[0.85,0.15],
+      [0.15,0.5], [0.5,0.5], [0.85,0.5],
+      [0.15,0.85],[0.5,0.85],[0.85,0.85]
+    ];
+    coords.forEach(([ax,ay]) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      const cur = get();
+      const active = Math.abs(cur.x-ax)<0.001 && Math.abs(cur.y-ay)<0.001;
+      btn.setAttribute("aria-pressed", active ? "true":"false");
+      btn.addEventListener("click", () => {
+        set(ax,ay);
+        [...container.children].forEach(b => b.setAttribute("aria-pressed","false"));
+        btn.setAttribute("aria-pressed","true");
+        scheduleRender();
+      });
+      container.appendChild(btn);
+    });
+  }
+
+  /* ---------------------------------------------------------------- *
+   *  File loading helpers
+   * ---------------------------------------------------------------- */
+  function loadImageFile(file, onReady){
+    if(!file || !file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => onReady(img, file);
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function setupDropzone(zoneId, inputId, onFile){
+    const zone = $(zoneId), input = $(inputId);
+    zone.addEventListener("click", () => input.click());
+    zone.addEventListener("keydown", (e) => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); input.click(); } });
+    ["dragover","dragenter"].forEach(ev => zone.addEventListener(ev, (e) => { e.preventDefault(); zone.classList.add("drag"); }));
+    ["dragleave","drop"].forEach(ev => zone.addEventListener(ev, (e) => { e.preventDefault(); zone.classList.remove("drag"); }));
+    zone.addEventListener("drop", (e) => { const f = e.dataTransfer.files[0]; if(f) onFile(f); });
+    input.addEventListener("change", (e) => { const f = e.target.files[0]; if(f) onFile(f); });
+  }
+
+  /* ---------------------------------------------------------------- *
+   *  Wire up controls
+   * ---------------------------------------------------------------- */
+  function slider(id, valId, unit, onChange){
+    const el = $(id), out = $(valId);
+    el.addEventListener("input", () => {
+      const v = Number(el.value);
+      out.textContent = v + unit;
+      onChange(v);
+      scheduleRender();
+    });
+  }
+
+  function initControls(){
+    buildMaterialGrid();
+    buildRoomGrid();
+    updateColorEnabled();
+
+    // Foto
+    setupDropzone("dropzone","photoInput", (file) => {
+      loadImageFile(file, (img) => {
+        state.photo = { img, w: img.naturalWidth, h: img.naturalHeight };
+        state.zoom = 1; state.panX = 0; state.panY = 0;
+        $("zoomRange").value = 100; $("zoomVal").textContent = "100%";
+        $("panXRange").value = 0; $("panXVal").textContent = "0";
+        $("panYRange").value = 0; $("panYVal").textContent = "0";
+        $("dropzoneEmpty").style.display = "none";
+        $("dropzoneFilled").style.display = "flex";
+        $("photoThumb").src = img.src;
+        $("photoName").textContent = file.name || "Foto";
+        $("photoDims").textContent = img.naturalWidth + " × " + img.naturalHeight + " px";
+        scheduleRender();
+      });
+    });
+
+    $("openingSelect").addEventListener("change", (e) => { state.opening = e.target.value; scheduleRender(); });
+    $("fitSelect").addEventListener("change", (e) => { state.fit = e.target.value; scheduleRender(); });
+    slider("zoomRange","zoomVal","%", v => state.zoom = v/100);
+    slider("panXRange","panXVal","", v => state.panX = v/100);
+    slider("panYRange","panYVal","", v => state.panY = v/100);
+
+    // drag photo directly on stage
+    let dragging = false, dragStart = null;
+    stageCanvas.addEventListener("pointerdown", (e) => {
+      if(!state.photo) return;
+      dragging = true; stageCanvas.classList.add("dragging");
+      dragStart = { x:e.clientX, y:e.clientY, panX:state.panX, panY:state.panY };
+      stageCanvas.setPointerCapture(e.pointerId);
+    });
+    stageCanvas.addEventListener("pointermove", (e) => {
+      if(!dragging) return;
+      const dx = e.clientX - dragStart.x, dy = e.clientY - dragStart.y;
+      const rect = stageCanvas.getBoundingClientRect();
+      state.panX = Math.max(-1, Math.min(1, dragStart.panX + dx / (rect.width*0.5) ));
+      state.panY = Math.max(-1, Math.min(1, dragStart.panY + dy / (rect.height*0.5) ));
+      $("panXRange").value = Math.round(state.panX*100); $("panXVal").textContent = Math.round(state.panX*100);
+      $("panYRange").value = Math.round(state.panY*100); $("panYVal").textContent = Math.round(state.panY*100);
+      scheduleRender();
+    });
+    ["pointerup","pointercancel","pointerleave"].forEach(ev => stageCanvas.addEventListener(ev, () => { dragging=false; stageCanvas.classList.remove("dragging"); }));
+    stageCanvas.classList.add("draggable");
+
+    // Rahmen
+    $("frameOn").addEventListener("change", (e) => { state.frame.on = e.target.checked; scheduleRender(); });
+    $("frameColor").addEventListener("input", (e) => { state.frame.color = e.target.value; buildMaterialGrid(); scheduleRender(); });
+    slider("frameWidth","frameWidthVal"," px", v => state.frame.width = v);
+    slider("matWidth","matWidthVal"," px", v => state.frame.mat = v);
+    slider("outerMargin","outerMarginVal"," px", v => state.frame.outer = v);
+    $("frameShadow").addEventListener("change", (e) => { state.frame.shadow = e.target.checked; scheduleRender(); });
+    [...$("matColorSet").children].forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.frame.matColor = btn.dataset.c;
+        [...$("matColorSet").children].forEach(b => b.setAttribute("aria-pressed","false"));
+        btn.setAttribute("aria-pressed","true");
+        scheduleRender();
+      });
+    });
+
+    // Wand
+    $("wallOn").addEventListener("change", (e) => { state.wall.on = e.target.checked; scheduleRender(); });
+    setupDropzone("roomDropzone","roomInput", (file) => {
+      loadImageFile(file, (img, file) => {
+        state.wall.customImg = img;
+        state.wall.preset = "custom";
+        $("roomDropzoneText").innerHTML = "<strong>" + (file.name||"Eigenes Foto") + "</strong><br>wird als Wand verwendet";
+        [...$("roomGrid").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.r==="custom" ? "true":"false"));
+        $("customRoomField").style.display = "";
+        scheduleRender();
+      });
+    });
+    slider("wallOffX","wallOffXVal","", v => state.wall.offX = v);
+    slider("wallOffY","wallOffYVal","", v => state.wall.offY = v);
+    slider("wallScale","wallScaleVal","%", v => state.wall.scale = v);
+    buildAnchorGrid($("wallAnchorGrid"),
+      () => ({x:state.wall.anchorX, y:state.wall.anchorY}),
+      (x,y) => { state.wall.anchorX = x; state.wall.anchorY = y; });
+
+    // Wasserzeichen
+    $("wmOn").addEventListener("change", (e) => { state.watermark.on = e.target.checked; scheduleRender(); });
+    [...$("wmKind").children].forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.watermark.kind = btn.dataset.v;
+        [...$("wmKind").children].forEach(b => b.setAttribute("aria-pressed", b===btn?"true":"false"));
+        $("wmTextFields").style.display = btn.dataset.v === "text" ? "" : "none";
+        $("wmImageFields").style.display = btn.dataset.v === "image" ? "" : "none";
+        scheduleRender();
+      });
+    });
+    $("wmText").addEventListener("input", (e) => { state.watermark.text = e.target.value; scheduleRender(); });
+    slider("wmFontSize","wmFontSizeVal"," px", v => state.watermark.fontSize = v);
+    $("wmColor").addEventListener("input", (e) => { state.watermark.color = e.target.value; scheduleRender(); });
+    setupDropzone("wmDropzone","wmInput", (file) => {
+      loadImageFile(file, (img, file) => {
+        state.watermark.image = img;
+        $("wmDropzoneText").innerHTML = "<strong>" + (file.name||"Bild") + "</strong><br>als Wasserzeichen aktiv";
+        scheduleRender();
+      });
+    });
+    slider("wmScale","wmScaleVal","%", v => state.watermark.scale = v);
+    slider("wmRotation","wmRotationVal","°", v => state.watermark.rotation = v);
+    $("wmTile").addEventListener("change", (e) => {
+      state.watermark.tile = e.target.checked;
+      $("wmAnchorField").style.display = e.target.checked ? "none" : "";
+      scheduleRender();
+    });
+    $("wmPlacement").addEventListener("change", (e) => {
+      state.watermark.placement = e.target.value;
+      $("wmBleedField").style.display = e.target.value === "behind" ? "" : "none";
+      scheduleRender();
+    });
+    slider("wmOpacity","wmOpacityVal","%", v => state.watermark.opacity = v);
+    slider("wmBleed","wmBleedVal","%", v => state.watermark.bleed = v);
+    buildAnchorGrid($("wmAnchorGrid"),
+      () => ({x:state.watermark.anchorX, y:state.watermark.anchorY}),
+      (x,y) => { state.watermark.anchorX = x; state.watermark.anchorY = y; });
+
+    // Export
+    $("exportFormat").addEventListener("change", (e) => {
+      $("jpegQualityField").style.display = e.target.value === "jpeg" ? "" : "none";
+    });
+    slider("jpegQuality","jpegQualityVal","%", () => {});
+    $("exportBtn").addEventListener("click", exportImage);
+
+    $("resetBtn").addEventListener("click", resetAll);
+  }
+
+  /* ---------------------------------------------------------------- *
+   *  Export
+   * ---------------------------------------------------------------- */
+  async function exportImage(){
+    const statusEl = $("exportStatus");
+    statusEl.dataset.state = "";
+    statusEl.textContent = "Wird vorbereitet …";
+    try{
+      const artLong = state.wall.on ? 1900 : 2400;
+      const art = buildArtCanvas(artLong);
+      const finalCanvas = state.wall.on ? buildRoomCanvas(art) : art.canvas;
+
+      const format = $("exportFormat").value;
+      const mime = format === "jpeg" ? "image/jpeg" : "image/png";
+      const quality = format === "jpeg" ? Number($("jpegQuality").value)/100 : undefined;
+      const ext = format === "jpeg" ? "jpg" : "png";
+      const name = ($("exportName").value || "rahmwerk-export").replace(/[^a-z0-9_\-]+/gi,"_");
+
+      const blob = await new Promise((resolve,reject) => {
+        finalCanvas.toBlob(b => b ? resolve(b) : reject(new Error("Export fehlgeschlagen")), mime, quality);
+      });
+
+      const downloads = window.claude ? await window.claude.use("downloads") : null;
+      if(downloads){
+        try{
+          await downloads.save({ filename: name + "." + ext, data: blob });
+          statusEl.dataset.state = "ok";
+          statusEl.textContent = "Gespeichert ✓";
+          return;
+        }catch(err){
+          if(err && err.code === "declined"){
+            statusEl.dataset.state = "";
+            statusEl.textContent = "Abgebrochen.";
+            return;
+          }
+          // fall through to manual fallback
+        }
+      }
+      statusEl.dataset.state = "";
+      statusEl.textContent = "Automatischer Download nicht verfügbar – Rechtsklick auf die Vorschau → „Grafik speichern unter …“.";
+    }catch(err){
+      statusEl.dataset.state = "err";
+      statusEl.textContent = "Fehler: " + (err && err.message ? err.message : "unbekannt");
+    }
+  }
+
+  /* ---------------------------------------------------------------- *
+   *  Persist lightweight settings (not photos) per viewer
+   * ---------------------------------------------------------------- */
+  function saveSettings(){
+    try{
+      const safe = {
+        opening: state.opening,
+        fit: state.fit,
+        frame: state.frame,
+        wall: { on: state.wall.on, preset: state.wall.preset === "custom" ? "living" : state.wall.preset,
+                scale: state.wall.scale, anchorX: state.wall.anchorX, anchorY: state.wall.anchorY, offX: state.wall.offX, offY: state.wall.offY },
+        watermark: { on: state.watermark.on, kind: state.watermark.kind, text: state.watermark.text,
+                     fontSize: state.watermark.fontSize, color: state.watermark.color, scale: state.watermark.scale,
+                     rotation: state.watermark.rotation, tile: state.watermark.tile, placement: state.watermark.placement,
+                     opacity: state.watermark.opacity, bleed: state.watermark.bleed, anchorX: state.watermark.anchorX, anchorY: state.watermark.anchorY }
+      };
+      localStorage.setItem("rahmwerk:settings", JSON.stringify(safe));
+    }catch(e){ /* storage unavailable — ignore */ }
+  }
+  function loadSettings(){
+    try{
+      const raw = localStorage.getItem("rahmwerk:settings");
+      if(!raw) return;
+      const saved = JSON.parse(raw);
+      if(saved.opening) state.opening = saved.opening;
+      if(saved.fit) state.fit = saved.fit;
+      if(saved.frame) Object.assign(state.frame, saved.frame);
+      if(saved.wall) Object.assign(state.wall, saved.wall);
+      if(saved.watermark) Object.assign(state.watermark, saved.watermark);
+    }catch(e){ /* corrupt or unavailable — ignore */ }
+  }
+
+  function applyStateToControls(){
+    $("openingSelect").value = state.opening;
+    $("fitSelect").value = state.fit;
+    $("frameOn").checked = state.frame.on;
+    $("frameColor").value = state.frame.color;
+    $("frameWidth").value = state.frame.width; $("frameWidthVal").textContent = state.frame.width + " px";
+    $("matWidth").value = state.frame.mat; $("matWidthVal").textContent = state.frame.mat + " px";
+    $("outerMargin").value = state.frame.outer; $("outerMarginVal").textContent = state.frame.outer + " px";
+    $("frameShadow").checked = state.frame.shadow;
+    [...$("matColorSet").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.c.toLowerCase() === state.frame.matColor.toLowerCase() ? "true":"false"));
+
+    $("wallOn").checked = state.wall.on;
+    $("wallOffX").value = state.wall.offX; $("wallOffXVal").textContent = state.wall.offX;
+    $("wallOffY").value = state.wall.offY; $("wallOffYVal").textContent = state.wall.offY;
+    $("wallScale").value = state.wall.scale; $("wallScaleVal").textContent = state.wall.scale + "%";
+    $("customRoomField").style.display = state.wall.preset === "custom" ? "" : "none";
+
+    $("wmOn").checked = state.watermark.on;
+    [...$("wmKind").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.v === state.watermark.kind ? "true":"false"));
+    $("wmTextFields").style.display = state.watermark.kind === "text" ? "" : "none";
+    $("wmImageFields").style.display = state.watermark.kind === "image" ? "" : "none";
+    $("wmText").value = state.watermark.text;
+    $("wmFontSize").value = state.watermark.fontSize; $("wmFontSizeVal").textContent = state.watermark.fontSize + " px";
+    $("wmColor").value = state.watermark.color;
+    $("wmScale").value = state.watermark.scale; $("wmScaleVal").textContent = state.watermark.scale + "%";
+    $("wmRotation").value = state.watermark.rotation; $("wmRotationVal").textContent = state.watermark.rotation + "°";
+    $("wmTile").checked = state.watermark.tile;
+    $("wmAnchorField").style.display = state.watermark.tile ? "none" : "";
+    $("wmPlacement").value = state.watermark.placement;
+    $("wmBleedField").style.display = state.watermark.placement === "behind" ? "" : "none";
+    $("wmOpacity").value = state.watermark.opacity; $("wmOpacityVal").textContent = state.watermark.opacity + "%";
+    $("wmBleed").value = state.watermark.bleed; $("wmBleedVal").textContent = state.watermark.bleed + "%";
+
+    updateColorEnabled();
+  }
+
+  function resetAll(){
+    const defaults = {
+      opening:"photo", fit:"contain", zoom:1, panX:0, panY:0,
+      frame:{ on:true, material:"oak", color:"#e8dcc0", width:46, mat:40, matColor:"#f6f3ea", outer:30, shadow:true },
+      wall:{ on:false, preset:"living", customImg:null, scale:46, anchorX:0.5, anchorY:0.62, offX:0, offY:0 },
+      watermark:{ on:false, kind:"text", text:"© Ihr Studio", fontSize:64, color:"#ffffff", image:null, scale:40, rotation:-28, tile:true, placement:"behind", opacity:28, bleed:0, anchorX:0.5, anchorY:0.5 }
+    };
+    state.opening = defaults.opening; state.fit = defaults.fit; state.zoom = defaults.zoom; state.panX = defaults.panX; state.panY = defaults.panY;
+    Object.assign(state.frame, defaults.frame);
+    Object.assign(state.wall, defaults.wall);
+    Object.assign(state.watermark, defaults.watermark);
+    applyStateToControls();
+    buildMaterialGrid(); buildRoomGrid();
+    buildAnchorGrid($("wallAnchorGrid"), () => ({x:state.wall.anchorX, y:state.wall.anchorY}), (x,y) => { state.wall.anchorX=x; state.wall.anchorY=y; });
+    buildAnchorGrid($("wmAnchorGrid"), () => ({x:state.watermark.anchorX, y:state.watermark.anchorY}), (x,y) => { state.watermark.anchorX=x; state.watermark.anchorY=y; });
+    $("zoomRange").value = 100; $("zoomVal").textContent = "100%";
+    $("panXRange").value = 0; $("panXVal").textContent = "0";
+    $("panYRange").value = 0; $("panYVal").textContent = "0";
+    scheduleRender();
+  }
+
+  /* ---------------------------------------------------------------- *
+   *  Init
+   * ---------------------------------------------------------------- */
+  loadSettings();
+  initControls();
+  applyStateToControls();
+  buildAnchorGrid($("wallAnchorGrid"), () => ({x:state.wall.anchorX, y:state.wall.anchorY}), (x,y) => { state.wall.anchorX=x; state.wall.anchorY=y; });
+  buildAnchorGrid($("wmAnchorGrid"), () => ({x:state.watermark.anchorX, y:state.watermark.anchorY}), (x,y) => { state.watermark.anchorX=x; state.watermark.anchorY=y; });
+  render();
+})();
+</script>
