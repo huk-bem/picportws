@@ -5,8 +5,9 @@ Bilderrahmen zu versehen, als Mockup in einem Raumfoto zu platzieren und mit
 einem Wasserzeichen zu versehen. Läuft vollständig client-seitig (HTML5
 Canvas) — keine Uploads an einen Server, keine Abhängigkeiten, kein Build-Schritt.
 
-**Live-Version:** siehe Artifact-Link, den Claude in der Konversation
-bereitgestellt hat (oder lokal: `index.html` im Browser öffnen).
+**Live-Version:** https://claude.ai/code/artifact/105e0107-0a3c-4ab8-9a76-8b479910bdb1
+(privat, über den Teilen-Button der Seite freigebbar) — oder lokal:
+`index.html` im Browser öffnen.
 
 ## Funktionen
 
