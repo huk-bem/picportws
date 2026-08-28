@@ -32,12 +32,23 @@ Canvas) — keine Uploads an einen Server, keine Abhängigkeiten, kein Build-Sch
   Ziehen auf der Vorschau.
 
 ### 3. Wand / Raumszene
-- Framed Picture auf einem Raumfoto platzieren: **Wohnzimmer**, **Büro**,
-  **Lobby** (prozedural gezeichnete Illustrationen) oder ein **eigenes
-  Raumfoto** hochladen.
+- Gerahmtes Bild auf einem Raumfoto platzieren: **Wohnzimmer**, **Büro**,
+  **Lobby** (prozedural gezeichnete Illustrationen) oder ein **eigenes,
+  fotorealistisches Raumfoto** hochladen (JPG/PNG/… beliebiger Größe).
 - **Platzierung des Rahmens**: 3×3-Positionsraster plus Feinjustierung
   (horizontal/vertikal) und Größenregler relativ zur Wandbreite.
-- Weicher Schlagschatten unter dem Bild für realistische Wirkung.
+- **Perspektive an Foto anpassen** (nur bei eigenem Raumfoto): die vier
+  Eckpunkte des Rahmens lassen sich direkt in der Vorschau auf die
+  Wandfläche des hochgeladenen Fotos ziehen. Das Bild wird per
+  Dreiecks-Affintransformation in dieses Viereck hineinverzerrt, sodass es
+  den Fluchtlinien eines schräg fotografierten Raums folgt, statt flach
+  aufzuliegen. „Ecken zurücksetzen“ stellt die unverzerrte Ausgangslage
+  wieder her.
+- **Lichtanpassung**: Helligkeitsregler (55–145 %), um den Ton des
+  eingefügten Bilds an das Umgebungslicht des Fotos anzugleichen.
+- Weicher Schlagschatten unter dem Bild für realistische Wirkung. Die
+  Ziehpunkte/Hilfslinien sind reine Vorschau-Hilfen und erscheinen nicht im
+  exportierten Bild.
 
 ### 4. Wasserzeichen
 - **Typ**: Text oder Bilddatei (Logo).

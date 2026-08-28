@@ -404,21 +404,39 @@
               <span id="roomDropzoneText"><strong>Eigenes Raumfoto</strong><br>Büro, Lobby, Wohnzimmer … hochladen</span>
             </div>
             <input type="file" id="roomInput" accept="image/*" class="sr-only">
+            <p class="hint">Für ein eigenes Foto: hochladen, dann unten „Perspektive an Foto anpassen“ aktivieren und die vier Eckpunkte direkt in der Vorschau auf die Wandfläche ziehen — so folgt der Rahmen den Fluchtlinien des Raums statt flach aufzuliegen.</p>
           </div>
 
-          <div class="field">
+          <div class="field" id="perspectiveField" style="display:none">
+            <div class="field-row panel-toggle">
+              <span>Perspektive an Foto anpassen</span>
+              <label class="switch"><input type="checkbox" id="wallPerspective"><span class="track"></span><span class="knob"></span></label>
+            </div>
+            <div id="perspectiveTools" style="display:none">
+              <p class="hint">Eckpunkte in der Vorschau auf die vier Ecken der Wandfläche ziehen.</p>
+              <button class="btn btn-block" id="perspectiveResetBtn" type="button">Ecken zurücksetzen</button>
+            </div>
+          </div>
+
+          <div class="field" id="lightMatchField" style="display:none">
+            <div class="field-row"><label class="label" for="wallLight">Lichtanpassung</label><span class="val" id="wallLightVal">100%</span></div>
+            <input type="range" id="wallLight" min="55" max="145" value="100" step="1">
+            <p class="hint">Gleicht die Helligkeit des Bilds an das Umgebungslicht des Fotos an.</p>
+          </div>
+
+          <div class="field" id="wallAnchorField">
             <label class="label">Platzierung des Rahmens</label>
             <div class="anchorgrid" id="wallAnchorGrid"></div>
           </div>
-          <div class="field">
+          <div class="field" id="wallOffXField">
             <div class="field-row"><label class="label" for="wallOffX">Feinjustierung horizontal</label><span class="val" id="wallOffXVal">0</span></div>
             <input type="range" id="wallOffX" min="-100" max="100" value="0" step="1">
           </div>
-          <div class="field">
+          <div class="field" id="wallOffYField">
             <div class="field-row"><label class="label" for="wallOffY">Feinjustierung vertikal</label><span class="val" id="wallOffYVal">0</span></div>
             <input type="range" id="wallOffY" min="-100" max="100" value="0" step="1">
           </div>
-          <div class="field">
+          <div class="field" id="wallScaleField">
             <div class="field-row"><label class="label" for="wallScale">Größe an der Wand</label><span class="val" id="wallScaleVal">46%</span></div>
             <input type="range" id="wallScale" min="14" max="86" value="46" step="1">
           </div>
@@ -567,7 +585,9 @@
     },
     wall: {
       on: false, preset: "living", customImg: null,
-      scale: 46, anchorX: 0.5, anchorY: 0.62, offX: 0, offY: 0
+      scale: 46, anchorX: 0.5, anchorY: 0.62, offX: 0, offY: 0,
+      perspective: false, corners: null, // corners: [{x,y}*4] TL,TR,BR,BL in 1200x800 room-canvas px
+      light: 100 // % brightness applied to the artwork so it blends with a real photo's lighting
     },
     watermark: {
       on: false, kind: "text", text: "© Ihr Studio", fontSize: 64, color: "#ffffff",
@@ -935,8 +955,59 @@
     return { canvas:c, innerRect: inner };
   }
 
+  const ROOM_W = 1200, ROOM_H = 800;
+
+  // The default, axis-aligned placement rect for the artwork on the room canvas
+  // (anchor grid + fine offset + size), independent of any perspective corners.
+  function wallAxisRect(artCanvas){
+    const wall = state.wall;
+    const targetW = ROOM_W * (wall.scale/100);
+    const f = targetW / artCanvas.width;
+    const artW = artCanvas.width*f, artH = artCanvas.height*f;
+    const margin = 30;
+    let cx = margin + wall.anchorX*(ROOM_W-2*margin);
+    let cy = margin + wall.anchorY*(ROOM_H-2*margin);
+    cx += (wall.offX/100) * ROOM_W * 0.28;
+    cy += (wall.offY/100) * ROOM_H * 0.22;
+    let x = cx - artW/2, y = cy - artH/2;
+    x = Math.min(Math.max(x, -artW*0.15), ROOM_W-artW*0.85);
+    y = Math.min(Math.max(y, -artH*0.15), ROOM_H-artH*0.85);
+    return { x, y, w:artW, h:artH };
+  }
+  function rectToCorners(r){
+    return [ {x:r.x,y:r.y}, {x:r.x+r.w,y:r.y}, {x:r.x+r.w,y:r.y+r.h}, {x:r.x,y:r.y+r.h} ];
+  }
+
+  // Solve the affine matrix mapping source triangle (x0,y0)(x1,y1)(x2,y2)
+  // onto destination triangle (X0,Y0)(X1,Y1)(X2,Y2), then paint `img` through it.
+  function drawTriangle(ctx, img, s0,s1,s2, d0,d1,d2){
+    const x0=s0[0],y0=s0[1], x1=s1[0],y1=s1[1], x2=s2[0],y2=s2[1];
+    const X0=d0.x,Y0=d0.y, X1=d1.x,Y1=d1.y, X2=d2.x,Y2=d2.y;
+    const denom = x0*(y1-y2) + x1*(y2-y0) + x2*(y0-y1);
+    if(Math.abs(denom) < 1e-6) return;
+    const a = (X0*(y1-y2) + X1*(y2-y0) + X2*(y0-y1)) / denom;
+    const c = (X0*(x2-x1) + X1*(x0-x2) + X2*(x1-x0)) / denom;
+    const e = (X0*(x1*y2-x2*y1) + X1*(x2*y0-x0*y2) + X2*(x0*y1-x1*y0)) / denom;
+    const b = (Y0*(y1-y2) + Y1*(y2-y0) + Y2*(y0-y1)) / denom;
+    const d = (Y0*(x2-x1) + Y1*(x0-x2) + Y2*(x1-x0)) / denom;
+    const f = (Y0*(x1*y2-x2*y1) + Y1*(x2*y0-x0*y2) + Y2*(x0*y1-x1*y0)) / denom;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(d0.x,d0.y); ctx.lineTo(d1.x,d1.y); ctx.lineTo(d2.x,d2.y); ctx.closePath();
+    ctx.clip();
+    ctx.transform(a,b,c,d,e,f);
+    ctx.drawImage(img, 0, 0);
+    ctx.restore();
+  }
+  // Warps `img` (its full W×H) into the destination quad [TL,TR,BR,BL] via two triangles.
+  function drawImageQuad(ctx, img, quad){
+    const w = img.width, h = img.height;
+    drawTriangle(ctx, img, [0,0],[w,0],[w,h], quad[0],quad[1],quad[2]);
+    drawTriangle(ctx, img, [0,0],[w,h],[0,h], quad[0],quad[2],quad[3]);
+  }
+
   function buildRoomCanvas(art){
-    const w = 1200, h = 800;
+    const w = ROOM_W, h = ROOM_H;
     const c = document.createElement("canvas");
     c.width = w; c.height = h;
     const ctx = c.getContext("2d");
@@ -944,27 +1015,31 @@
 
     const artCanvas = art.canvas;
     const wall = state.wall;
-    const targetW = w * (wall.scale/100);
-    const f = targetW / artCanvas.width;
-    const artW = artCanvas.width*f, artH = artCanvas.height*f;
-    const margin = 30;
-    let cx = margin + wall.anchorX*(w-2*margin);
-    let cy = margin + wall.anchorY*(h-2*margin);
-    cx += (wall.offX/100) * w * 0.28;
-    cy += (wall.offY/100) * h * 0.22;
-    let x = cx - artW/2, y = cy - artH/2;
-    x = Math.min(Math.max(x, -artW*0.15), w-artW*0.85);
-    y = Math.min(Math.max(y, -artH*0.15), h-artH*0.85);
+    const usePerspective = wall.perspective && wall.corners;
+    const quad = usePerspective ? wall.corners : rectToCorners(wallAxisRect(artCanvas));
+
+    const xs = quad.map(p=>p.x), ys = quad.map(p=>p.y);
+    const bx0 = Math.min(...xs), bx1 = Math.max(...xs), by0 = Math.min(...ys), by1 = Math.max(...ys);
+    const bw = bx1-bx0, bh = by1-by0;
 
     ctx.save();
     ctx.filter = "blur(16px)";
     ctx.fillStyle = "rgba(8,6,3,0.4)";
     ctx.beginPath();
-    ctx.ellipse(x+artW/2, y+artH+artH*0.05, artW*0.44, artH*0.07, 0,0,Math.PI*2);
+    ctx.ellipse(bx0+bw/2, by1+bh*0.05, bw*0.44, Math.max(6,bh*0.07), 0,0,Math.PI*2);
     ctx.fill();
     ctx.restore();
 
-    ctx.drawImage(artCanvas, x, y, artW, artH);
+    ctx.save();
+    ctx.filter = "brightness(" + (wall.light/100).toFixed(3) + ")";
+    if(usePerspective){
+      drawImageQuad(ctx, artCanvas, quad);
+    } else {
+      const r = wallAxisRect(artCanvas);
+      ctx.drawImage(artCanvas, r.x, r.y, r.w, r.h);
+    }
+    ctx.restore();
+
     return c;
   }
 
@@ -995,8 +1070,32 @@
     dctx.clearRect(0,0,stageCanvas.width, stageCanvas.height);
     dctx.drawImage(finalCanvas,0,0);
     stageCanvas.classList.toggle("floating", isFloating);
+    if(state.wall.on && state.wall.perspective && state.wall.corners){
+      drawCornerHandles(dctx, state.wall.corners);
+    }
     $("readout").textContent = finalCanvas.width + " × " + finalCanvas.height + " px";
     saveSettings();
+  }
+
+  // Preview-only overlay (never baked into the exported image): the four
+  // draggable corner handles plus a guide outline for perspective mode.
+  function drawCornerHandles(ctx, corners){
+    const accent = getComputedStyle(document.documentElement).getPropertyValue("--brass").trim() || "#c99a52";
+    ctx.save();
+    ctx.setLineDash([7,6]);
+    ctx.strokeStyle = accent; ctx.lineWidth = 2;
+    ctx.beginPath();
+    corners.forEach((p,i) => i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
+    ctx.closePath(); ctx.stroke();
+    ctx.setLineDash([]);
+    corners.forEach(p => {
+      ctx.beginPath(); ctx.arc(p.x,p.y,11,0,Math.PI*2);
+      ctx.fillStyle = "rgba(20,16,10,0.55)"; ctx.fill();
+      ctx.beginPath(); ctx.arc(p.x,p.y,7,0,Math.PI*2);
+      ctx.fillStyle = accent; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = "#fff"; ctx.stroke();
+    });
+    ctx.restore();
   }
 
   /* ---------------------------------------------------------------- *
@@ -1031,6 +1130,18 @@
     $("frameColor").disabled = !MATERIALS[state.frame.material].colorable;
   }
 
+  function updatePerspectiveVisibility(){
+    const customReady = state.wall.preset === "custom" && !!state.wall.customImg;
+    $("perspectiveField").style.display = customReady ? "" : "none";
+    $("lightMatchField").style.display = customReady ? "" : "none";
+    $("perspectiveTools").style.display = state.wall.perspective ? "" : "none";
+    const axisMode = !(customReady && state.wall.perspective);
+    $("wallAnchorField").style.display = axisMode ? "" : "none";
+    $("wallOffXField").style.display = axisMode ? "" : "none";
+    $("wallOffYField").style.display = axisMode ? "" : "none";
+    $("wallScaleField").style.display = axisMode ? "" : "none";
+  }
+
   function buildRoomGrid(){
     const grid = $("roomGrid");
     grid.innerHTML = "";
@@ -1043,6 +1154,7 @@
       cv.width = 160; cv.height = 96;
       const c = cv.getContext("2d");
       if(preset.draw){ preset.draw(c,160,96); }
+      else if(state.wall.customImg){ coverDraw(c, state.wall.customImg, 0,0,160,96); }
       else {
         c.fillStyle = "#cfc8b6"; c.fillRect(0,0,160,96);
         c.fillStyle = "#8a8062"; c.font="12px 'IBM Plex Sans'"; c.textAlign="center"; c.textBaseline="middle";
@@ -1055,6 +1167,7 @@
         state.wall.preset = key;
         [...grid.children].forEach(b => b.setAttribute("aria-pressed", b === btn ? "true":"false"));
         $("customRoomField").style.display = key === "custom" ? "" : "none";
+        updatePerspectiveVisibility();
         scheduleRender();
       });
       grid.appendChild(btn);
@@ -1149,15 +1262,45 @@
     slider("panXRange","panXVal","", v => state.panX = v/100);
     slider("panYRange","panYVal","", v => state.panY = v/100);
 
-    // drag photo directly on stage
-    let dragging = false, dragStart = null;
+    // drag photo directly on stage, or — in perspective mode — drag a wall corner
+    function canvasPoint(e){
+      const rect = stageCanvas.getBoundingClientRect();
+      return {
+        x: (e.clientX-rect.left) * (stageCanvas.width/rect.width),
+        y: (e.clientY-rect.top) * (stageCanvas.height/rect.height)
+      };
+    }
+    let dragging = false, dragStart = null, draggingCorner = -1;
     stageCanvas.addEventListener("pointerdown", (e) => {
-      if(!state.photo) return;
+      if(state.wall.on && state.wall.perspective && state.wall.corners){
+        const p = canvasPoint(e);
+        let best = -1, bestDist = 34;
+        state.wall.corners.forEach((c,i) => {
+          const d = Math.hypot(c.x-p.x, c.y-p.y);
+          if(d < bestDist){ bestDist = d; best = i; }
+        });
+        if(best >= 0){
+          draggingCorner = best;
+          stageCanvas.classList.add("dragging");
+          stageCanvas.setPointerCapture(e.pointerId);
+        }
+        return;
+      }
+      if(!state.photo || state.wall.on) return;
       dragging = true; stageCanvas.classList.add("dragging");
       dragStart = { x:e.clientX, y:e.clientY, panX:state.panX, panY:state.panY };
       stageCanvas.setPointerCapture(e.pointerId);
     });
     stageCanvas.addEventListener("pointermove", (e) => {
+      if(draggingCorner >= 0){
+        const p = canvasPoint(e);
+        const pad = 260;
+        p.x = Math.max(-pad, Math.min(ROOM_W+pad, p.x));
+        p.y = Math.max(-pad, Math.min(ROOM_H+pad, p.y));
+        state.wall.corners[draggingCorner] = p;
+        scheduleRender();
+        return;
+      }
       if(!dragging) return;
       const dx = e.clientX - dragStart.x, dy = e.clientY - dragStart.y;
       const rect = stageCanvas.getBoundingClientRect();
@@ -1167,7 +1310,9 @@
       $("panYRange").value = Math.round(state.panY*100); $("panYVal").textContent = Math.round(state.panY*100);
       scheduleRender();
     });
-    ["pointerup","pointercancel","pointerleave"].forEach(ev => stageCanvas.addEventListener(ev, () => { dragging=false; stageCanvas.classList.remove("dragging"); }));
+    ["pointerup","pointercancel","pointerleave"].forEach(ev => stageCanvas.addEventListener(ev, () => {
+      dragging=false; draggingCorner=-1; stageCanvas.classList.remove("dragging");
+    }));
     stageCanvas.classList.add("draggable");
 
     // Rahmen
@@ -1192,18 +1337,34 @@
       loadImageFile(file, (img, file) => {
         state.wall.customImg = img;
         state.wall.preset = "custom";
+        state.wall.corners = null; // a new photo needs fresh corners
         $("roomDropzoneText").innerHTML = "<strong>" + (file.name||"Eigenes Foto") + "</strong><br>wird als Wand verwendet";
         [...$("roomGrid").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.r==="custom" ? "true":"false"));
         $("customRoomField").style.display = "";
+        updatePerspectiveVisibility();
         scheduleRender();
       });
     });
     slider("wallOffX","wallOffXVal","", v => state.wall.offX = v);
     slider("wallOffY","wallOffYVal","", v => state.wall.offY = v);
     slider("wallScale","wallScaleVal","%", v => state.wall.scale = v);
+    slider("wallLight","wallLightVal","%", v => state.wall.light = v);
     buildAnchorGrid($("wallAnchorGrid"),
       () => ({x:state.wall.anchorX, y:state.wall.anchorY}),
       (x,y) => { state.wall.anchorX = x; state.wall.anchorY = y; });
+
+    $("wallPerspective").addEventListener("change", (e) => {
+      state.wall.perspective = e.target.checked;
+      if(state.wall.perspective && !state.wall.corners){
+        state.wall.corners = rectToCorners(wallAxisRect(buildArtCanvas(900).canvas));
+      }
+      updatePerspectiveVisibility();
+      scheduleRender();
+    });
+    $("perspectiveResetBtn").addEventListener("click", () => {
+      state.wall.corners = rectToCorners(wallAxisRect(buildArtCanvas(900).canvas));
+      scheduleRender();
+    });
 
     // Wasserzeichen
     $("wmOn").addEventListener("change", (e) => { state.watermark.on = e.target.checked; scheduleRender(); });
@@ -1347,7 +1508,10 @@
     $("wallOffX").value = state.wall.offX; $("wallOffXVal").textContent = state.wall.offX;
     $("wallOffY").value = state.wall.offY; $("wallOffYVal").textContent = state.wall.offY;
     $("wallScale").value = state.wall.scale; $("wallScaleVal").textContent = state.wall.scale + "%";
+    $("wallLight").value = state.wall.light; $("wallLightVal").textContent = state.wall.light + "%";
+    $("wallPerspective").checked = state.wall.perspective;
     $("customRoomField").style.display = state.wall.preset === "custom" ? "" : "none";
+    updatePerspectiveVisibility();
 
     $("wmOn").checked = state.watermark.on;
     [...$("wmKind").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.v === state.watermark.kind ? "true":"false"));
@@ -1372,7 +1536,8 @@
     const defaults = {
       opening:"photo", fit:"contain", zoom:1, panX:0, panY:0,
       frame:{ on:true, material:"oak", color:"#e8dcc0", width:46, mat:40, matColor:"#f6f3ea", outer:30, shadow:true },
-      wall:{ on:false, preset:"living", customImg:null, scale:46, anchorX:0.5, anchorY:0.62, offX:0, offY:0 },
+      wall:{ on:false, preset:"living", customImg:null, scale:46, anchorX:0.5, anchorY:0.62, offX:0, offY:0,
+             perspective:false, corners:null, light:100 },
       watermark:{ on:false, kind:"text", text:"© Ihr Studio", fontSize:64, color:"#ffffff", image:null, scale:40, rotation:-28, tile:true, placement:"behind", opacity:28, bleed:0, anchorX:0.5, anchorY:0.5 }
     };
     state.opening = defaults.opening; state.fit = defaults.fit; state.zoom = defaults.zoom; state.panX = defaults.panX; state.panY = defaults.panY;
